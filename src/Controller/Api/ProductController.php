@@ -2,19 +2,35 @@
 
 namespace App\Controller\Api;
 
+use App\Entity\Product;
 use App\Repository\ProductRepository;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
+#[Route('/api/product')]
 class ProductController extends AbstractController
 {
-    #[Route('/product', name: 'app_api_product')]
-    public function index(ProductRepository $productRepository, SerializerInterface $serializer): JsonResponse
+    #[Route(name: 'api_product_get_collection')]
+    public function getCollection(ProductRepository $productRepository, SerializerInterface $serializer): JsonResponse
     {
+        return new JsonResponse(
+            $serializer->serialize($productRepository->findAll(), "json", ['groups' => 'get_products']),
+            JsonResponse::HTTP_OK,
+            [],
+            true
+        );
+    }
 
-        $productRepository->findAll();
-        return new JsonResponse($serializer->serialize($productRepository->find(1), 'json'));
+    #[Route("/{id}", name: 'api_product_get_item')]
+    public function getItem(Product $product, SerializerInterface $serializer): JsonResponse
+    {
+        return new JsonResponse(
+            $serializer->serialize($product, "json", ['groups' => ['get_products', 'get_product']]),
+            JsonResponse::HTTP_OK,
+            [],
+            true
+        );
     }
 }

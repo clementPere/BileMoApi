@@ -2,10 +2,11 @@
 
 namespace App\Entity;
 
+use Doctrine\ORM\Mapping as ORM;
+use Doctrine\Common\Collections\Collection;
 use App\Repository\ProductDetailTitleRepository;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
-use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ProductDetailTitleRepository::class)]
 class ProductDetailTitle
@@ -16,6 +17,7 @@ class ProductDetailTitle
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['get_product'])]
     private ?string $value = null;
 
     #[ORM\OneToMany(mappedBy: 'productDetailTitle', targetEntity: ProductDetailValue::class)]
