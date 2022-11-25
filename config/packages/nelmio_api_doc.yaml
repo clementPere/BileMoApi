@@ -1,0 +1,45 @@
+nelmio_api_doc:
+  documentation:
+    info:
+      title: Api BileMo
+      description: Symfony 6 version
+      version: 1.0.0
+    components:
+      securitySchemes:
+        Bearer:
+          type: http
+          scheme: bearer
+          bearerFormat: JWT
+    security:
+        - Bearer: []
+    paths:
+      /api/login_check:
+        post:
+          tags:
+            - login
+          summary: Se connecter et récuperer un JWT token.
+          requestBody:
+            description: Se connecter et récuperer un JWT token.
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    username:
+                      type: string
+                    password:
+                      type: string
+          responses:
+            '200':
+              description: Authenticated.
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+  areas:
+    path_patterns:
+      - ^/api(?!/doc$)
+  use_validation_groups: true
