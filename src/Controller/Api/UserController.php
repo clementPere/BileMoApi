@@ -14,12 +14,17 @@ use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 #[Route('/api/user')]
 #[OA\Tag(name: 'User')]
 class UserController extends AbstractController
 {
-
+    public function __construct(private TagAwareCacheInterface $cache)
+    {
+    }
 
     /**
      * Affiche la liste de vos clients
@@ -34,14 +39,29 @@ class UserController extends AbstractController
         description: 'Successful response',
         content: new Model(type: User::class, groups: ['groups' => 'get_users'])
     )]
-    public function getCollection(UserRepository $user, SerializerInterface $serializer): JsonResponse
+    #[OA\Parameter(
+        name: 'page',
+        in: 'query',
+        description: 'The field used to choose a page',
+        schema: new OA\Schema(type: 'string')
+    )]
+    #[OA\Parameter(
+        name: 'limit',
+        in: 'query',
+        description: 'The field used to choose how many user you want by page',
+        schema: new OA\Schema(type: 'string')
+    )]
+    public function getCollection(UserRepository $user, SerializerInterface $serializer, Request $request): JsonResponse
     {
-        return new JsonResponse(
-            $serializer->serialize($user->findBy(["customer" => $this->getUser()]), "json", ['groups' => 'get_users']),
-            JsonResponse::HTTP_OK,
-            [],
-            true
-        );
+        $page = $request->get('page', 1);
+        $limit = $request->get('limit', 5);
+
+        $jsonUsers = $this->cache->get("get-users-$page-$limit", function (ItemInterface $item) use ($user, $serializer, $page, $limit) {
+            $item->expiresAfter(3600);
+            $item->tag("usersCache");
+            return $serializer->serialize($user->findAllWithPagination($page, $limit, $this->getUser()), "json", ['groups' => 'get_users']);
+        });
+        return new JsonResponse($jsonUsers, JsonResponse::HTTP_OK, [], true);
     }
 
 
@@ -61,14 +81,16 @@ class UserController extends AbstractController
     public function getItem(User $user, SerializerInterface $serializer): JsonResponse
     {
         if ($user->getCustomer() !== $this->getUser()) {
-            return new JsonResponse("Your rights are insufficient to access this resource", 403);
+            return new JsonResponse("Error: Your rights are insufficient to access this resource", 403);
         }
-        return new JsonResponse(
-            $serializer->serialize($user, "json", ['groups' => ['get_users', 'get_user']]),
-            JsonResponse::HTTP_OK,
-            [],
-            true
-        );
+
+
+        $jsonUser = $this->cache->get("get-user" . $user->getId(), function (ItemInterface $item) use ($user, $serializer) {
+            $item->expiresAfter(3600);
+            $item->tag("userCache");
+            return $serializer->serialize($user, "json", ['groups' => ['get_users', 'get_user']]);
+        });
+        return new JsonResponse($jsonUser, JsonResponse::HTTP_OK, [], true);
     }
 
 
@@ -101,6 +123,7 @@ class UserController extends AbstractController
         $user->setCustomer($this->getUser());
         $entityManager->persist($user);
         $entityManager->flush();
+        $this->cache->invalidateTags(["usersCache"]);
         return new JsonResponse(
             $serializer->serialize($user, "json", ['groups' => 'get_user']),
             JsonResponse::HTTP_CREATED,
@@ -129,6 +152,7 @@ class UserController extends AbstractController
         }
         $entityManager->remove($user);
         $entityManager->flush();
+        $this->cache->invalidateTags(["usersCache", "userCache"]);
         return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT,);
     }
 }

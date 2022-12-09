@@ -6,16 +6,22 @@ use App\Entity\Product;
 use OpenApi\Attributes as OA;
 use App\Repository\ProductRepository;
 use Nelmio\ApiDocBundle\Annotation\Model;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Contracts\Cache\CacheInterface;
+use Symfony\Contracts\Cache\ItemInterface;
 
 #[Route('/api/product')]
 #[OA\Tag(name: 'Product')]
 
 class ProductController extends AbstractController
 {
+    public function __construct(private CacheInterface $cache)
+    {
+    }
 
 
     /**
@@ -31,14 +37,28 @@ class ProductController extends AbstractController
         description: 'Successful response',
         content: new Model(type: Product::class, groups: ['groups' => 'get_products'])
     )]
-    public function getCollection(ProductRepository $productRepository, SerializerInterface $serializer): JsonResponse
+    #[OA\Parameter(
+        name: 'page',
+        in: 'query',
+        description: 'The field used to choose a page',
+        schema: new OA\Schema(type: 'string')
+    )]
+    #[OA\Parameter(
+        name: 'limit',
+        in: 'query',
+        description: 'The field used to choose how many product you want by page',
+        schema: new OA\Schema(type: 'string')
+    )]
+    public function getCollection(ProductRepository $productRepository, SerializerInterface $serializer, Request $request): JsonResponse
     {
-        return new JsonResponse(
-            $serializer->serialize($productRepository->findAll(), "json", ['groups' => 'get_products']),
-            JsonResponse::HTTP_OK,
-            [],
-            true
-        );
+        $page = $request->get('page', 1);
+        $limit = $request->get('limit', 5);
+
+        $jsonProducts = $this->cache->get("get-products-$page-$limit", function (ItemInterface $item) use ($productRepository, $serializer, $limit, $page) {
+            $item->expiresAfter(3600);
+            return $serializer->serialize($productRepository->findAllWithPagination($page, $limit), "json", ['groups' => 'get_products']);
+        });
+        return new JsonResponse($jsonProducts, JsonResponse::HTTP_OK, [], true);
     }
 
 
@@ -57,11 +77,10 @@ class ProductController extends AbstractController
     )]
     public function getItem(Product $product, SerializerInterface $serializer): JsonResponse
     {
-        return new JsonResponse(
-            $serializer->serialize($product, "json", ['groups' => ['get_products', 'get_product']]),
-            JsonResponse::HTTP_OK,
-            [],
-            true
-        );
+        $jsonProduct = $this->cache->get("get-product-" . $product->getId(), function (ItemInterface $item) use ($product, $serializer) {
+            $item->expiresAfter(3600);
+            return $serializer->serialize($product, "json", ['groups' => ['get_products', 'get_product']]);
+        });
+        return new JsonResponse($jsonProduct, JsonResponse::HTTP_OK, [], true);
     }
 }
