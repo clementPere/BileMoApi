@@ -3,9 +3,9 @@
 namespace App\Service;
 
 
-class Data
+class DataMobile
 {
-    public function getData(): array
+    public static function getDataMobile(): array
     {
         return [
             "brand" => ["Apple", "Samsung", "Asus", "Xiaomi", "Huawei", "Oppo", "Vivo", "Motorola", "Lenovo", "LG", "Nokia"],

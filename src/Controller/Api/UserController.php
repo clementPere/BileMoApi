@@ -5,18 +5,19 @@ namespace App\Controller\Api;
 use App\Entity\User;
 use OpenApi\Attributes as OA;
 use App\Repository\UserRepository;
+use JMS\Serializer\SerializerInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use JMS\Serializer\SerializationContext;
 use Nelmio\ApiDocBundle\Annotation\Model;
+use JMS\Serializer\DeserializationContext;
+use Symfony\Contracts\Cache\ItemInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Contracts\Cache\TagAwareCacheInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Contracts\Cache\CacheInterface;
-use Symfony\Contracts\Cache\ItemInterface;
-use Symfony\Contracts\Cache\TagAwareCacheInterface;
 
 #[Route('/api/user')]
 #[OA\Tag(name: 'User')]
@@ -59,7 +60,8 @@ class UserController extends AbstractController
         $jsonUsers = $this->cache->get("get-users-$page-$limit", function (ItemInterface $item) use ($user, $serializer, $page, $limit) {
             $item->expiresAfter(3600);
             $item->tag("usersCache");
-            return $serializer->serialize($user->findAllWithPagination($page, $limit, $this->getUser()), "json", ['groups' => 'get_users']);
+            $context = SerializationContext::create()->setGroups(['get_users']);
+            return $serializer->serialize($user->findAllWithPagination($page, $limit, $this->getUser()), "json", $context);
         });
         return new JsonResponse($jsonUsers, JsonResponse::HTTP_OK, [], true);
     }
@@ -84,11 +86,11 @@ class UserController extends AbstractController
             return new JsonResponse("Error: Your rights are insufficient to access this resource", 403);
         }
 
-
         $jsonUser = $this->cache->get("get-user" . $user->getId(), function (ItemInterface $item) use ($user, $serializer) {
             $item->expiresAfter(3600);
             $item->tag("userCache");
-            return $serializer->serialize($user, "json", ['groups' => ['get_users', 'get_user']]);
+            $context = SerializationContext::create()->setGroups(['get_users', 'get_user']);
+            return $serializer->serialize($user, "json", $context);
         });
         return new JsonResponse($jsonUser, JsonResponse::HTTP_OK, [], true);
     }
@@ -113,7 +115,8 @@ class UserController extends AbstractController
     public function postItem(Request $request, EntityManagerInterface $entityManager, SerializerInterface $serializer, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator): JsonResponse
     {
 
-        $user = $serializer->deserialize($request->getContent(), User::class, "json", ['groups' => 'post_user']);
+        $context = DeserializationContext::create()->setGroups(['post_user']);
+        $user = $serializer->deserialize($request->getContent(), User::class, "json", $context);
         $errors = $validator->validate($user);
         if (count($errors) > 0) {
             $errorsString = (string) $errors;
@@ -124,8 +127,9 @@ class UserController extends AbstractController
         $entityManager->persist($user);
         $entityManager->flush();
         $this->cache->invalidateTags(["usersCache"]);
+        $context = SerializationContext::create()->setGroups(['post_user']);
         return new JsonResponse(
-            $serializer->serialize($user, "json", ['groups' => 'get_user']),
+            $serializer->serialize($user, "json", $context),
             JsonResponse::HTTP_CREATED,
             ["Location" => $urlGenerator->generate("api_user_post_item", ["id" => $user->getId()])],
             true
