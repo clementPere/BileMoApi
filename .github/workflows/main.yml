@@ -25,14 +25,14 @@ jobs:
         with:
           username: clement
           server: clement-pere.fr
-          port: 22
+          port: 6464
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
  
           
           # will put all file under this path
           local_path: ./* # default is ./*
           # files will copy to under remote_path
-          remote_path: /home/clemen/www/BileMoApi
+          remote_path: /home/clement/www/BileMoApi
           
           # sftp args
           args: '-o ConnectTimeout=5'
