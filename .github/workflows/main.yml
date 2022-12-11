@@ -25,7 +25,7 @@ jobs:
         with:
           username: clement
           server: clement-pere.fr
-          port: 6464
+          port: 22
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
  
           
