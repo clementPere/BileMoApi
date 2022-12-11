@@ -1,6 +1,5 @@
 # BileMo
 
-test
 An API exposing information on different phone
 
 <p align="center"><a href="https://symfony.com" target="_blank">
