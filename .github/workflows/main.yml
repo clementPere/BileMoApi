@@ -17,15 +17,11 @@ jobs:
   deploy-via-sftp:
     runs-on: ubuntu-latest
     steps:
-        - name: Checkout
-        uses: actions/checkout@v2
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
 
-        - name: composer install and update database
-        run: "composer install --no-interaction --no-progress && php bin/console d:m:m -n"
-
-        - name: deploy file to server
+      - name: SFTP Deploy
         uses: wlixcc/SFTP-Deploy-Action@v1.2.1
-
         with:
           username: ${{ secrets.SSH_USERNAME }}
           server: ${{ secrets.SSH_SERVER }}
@@ -36,5 +32,6 @@ jobs:
           local_path: ./* # default is ./*
           # files will copy to under remote_path
           remote_path: /home/clement/www/BileMoApi
-          sftpArgs: '-o ConnectTimeout=5'
-          
+
+          # sftp args
+          args: "-o ConnectTimeout=5"
