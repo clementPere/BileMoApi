@@ -23,9 +23,9 @@ jobs:
       - name: SFTP Deploy
         uses: wlixcc/SFTP-Deploy-Action@v1.2.1
         with:
-          username: clement
-          server: clement-pere.fr
-          port: 6464
+          username: ${{ secrets.SSH_USERNAME }}
+          server: ${{ secrets.SSH_SERVER }}
+          port: ${{ secrets.SSH_PORT }}
           ssh_private_key: ${{ secrets.SSH_PRIVATE_KEY }}
  
           
