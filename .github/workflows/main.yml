@@ -34,4 +34,4 @@ jobs:
           remote_path: /home/clement/www/BileMoApi
 
       - name: "Composer install and Update database schema"
-        run: cd /home/clement/www/BileMoApi/ && composer install --no-interaction --no-progress && php bin/console d:m:m -n
+        run: "cd /home/clement/www/BileMoApi && composer install --no-interaction --no-progress && php bin/console d:m:m -n"
