@@ -32,6 +32,4 @@ jobs:
           local_path: ./* # default is ./*
           # files will copy to under remote_path
           remote_path: /home/clement/www/BileMoApi
-
-      - name: "Composer install and Update database schema"
-        run: "composer install --no-interaction --no-progress && php bin/console d:m:m -n"
+          run: "composer install --no-interaction --no-progress && php bin/console d:m:m -n"
