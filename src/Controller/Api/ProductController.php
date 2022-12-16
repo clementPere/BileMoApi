@@ -18,7 +18,7 @@ use JMS\Serializer\SerializerInterface;
 
 #[Route('/api/products')]
 #[OA\Tag(name: 'Product')]
-
+//test
 class ProductController extends AbstractController
 {
     public function __construct(private CacheInterface $cache)
