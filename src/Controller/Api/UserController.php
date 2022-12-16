@@ -19,7 +19,7 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
-#[Route('/api/user')]
+#[Route('/api/users')]
 #[OA\Tag(name: 'User')]
 class UserController extends AbstractController
 {

@@ -16,7 +16,7 @@ use JMS\Serializer\SerializationContext;
 use JMS\Serializer\SerializerInterface;
 
 
-#[Route('/api/product')]
+#[Route('/api/products')]
 #[OA\Tag(name: 'Product')]
 
 class ProductController extends AbstractController
