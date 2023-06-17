@@ -28,6 +28,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            echo ${{ secrets.SSH_PRIVATE_KEY }}
             cd ${{ secrets.REMOTE_PATH }}
             git pull
             composer install --no-dev --optimize-autoloader
